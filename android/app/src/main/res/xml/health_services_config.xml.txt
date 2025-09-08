@@ -1,0 +1,10 @@
+ <resources>
+    <data-types>
+        <data-type android:name=
+     "androidx.health.connect.client.records.HeartRateRecord" />
+         <data-type android:name=
+     "androidx.health.connect.client.records.SleepSessionRecord" />
+         <!-- Add other data types here as needed, e.g.,
+     StepsRecord, ActiveCaloriesBurnedRecord -->
+     </data-types>
+ </resources>
