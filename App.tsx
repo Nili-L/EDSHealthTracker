@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   SafeAreaView,
   ScrollView,
@@ -9,7 +9,6 @@ import {
   View,
   Button,
   Alert,
-  Platform,
 } from 'react-native';
 import { Colors } from 'react-native/Libraries/NewAppScreen';
 import HealthConnect, {
@@ -17,6 +16,27 @@ import HealthConnect, {
   Permission,
   RecordType,
 } from 'react-native-health-connect';
+
+const PERMISSIONS: Permission[] = [
+  { accessType: 'read', recordType: RecordType.HeartRate },
+  { accessType: 'read', recordType: RecordType.SleepSession },
+];
+
+function getLast7DaysRange() {
+  const endTime = new Date();
+  const startTime = new Date(endTime);
+  startTime.setDate(startTime.getDate() - 7);
+  return {
+    operator: 'between' as const,
+    startTime: startTime.toISOString(),
+    endTime: endTime.toISOString(),
+  };
+}
+
+function handleError(context: string, message: string, error?: unknown) {
+  console.error(`Error ${context}:`, error);
+  Alert.alert('Error', message);
+}
 
 function App(): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
@@ -27,11 +47,6 @@ function App(): React.JSX.Element {
   const [permissionsGranted, setPermissionsGranted] = useState(false);
   const [heartRateData, setHeartRateData] = useState<HealthConnectRecord[]>([]);
   const [sleepData, setSleepData] = useState<HealthConnectRecord[]>([]);
-
-  const PERMISSIONS = [
-    { accessType: 'read', recordType: RecordType.HeartRate },
-    { accessType: 'read', recordType: RecordType.SleepSession },
-  ] as Permission[];
 
   const requestPermissions = async () => {
     try {
@@ -44,8 +59,7 @@ function App(): React.JSX.Element {
         setPermissionsGranted(false);
       }
     } catch (error) {
-      console.error('Error requesting permissions:', error);
-      Alert.alert('Error', 'Failed to request permissions.');
+      handleError('requesting permissions', 'Failed to request permissions.', error);
     }
   };
 
@@ -56,59 +70,29 @@ function App(): React.JSX.Element {
     }
 
     try {
-      // Read Heart Rate Data
+      const timeRangeFilter = getLast7DaysRange();
+
       const heartRateRecords = await HealthConnect.readRecords(RecordType.HeartRate, {
-        timeRangeFilter: {
-          operator: 'between',
-          startTime: new Date(new Date().setDate(new Date().getDate() - 7)).toISOString(), // Last 7 days
-          endTime: new Date().toISOString(),
-        },
+        timeRangeFilter,
       });
       setHeartRateData(heartRateRecords);
-      console.log('Heart Rate Data:', heartRateRecords);
 
-      // Read Sleep Data
       const sleepRecords = await HealthConnect.readRecords(RecordType.SleepSession, {
-        timeRangeFilter: {
-          operator: 'between',
-          startTime: new Date(new Date().setDate(new Date().getDate() - 7)).toISOString(), // Last 7 days
-          endTime: new Date().toISOString(),
-        },
+        timeRangeFilter,
       });
       setSleepData(sleepRecords);
-      console.log('Sleep Data:', sleepRecords);
 
-      Alert.alert('Data Fetched', 'Heart rate and sleep data fetched successfully. Check console for details.');
+      Alert.alert('Data Fetched', 'Heart rate and sleep data fetched successfully.');
 
-      // Placeholder for sending data to backend
       sendDataToBackend(heartRateRecords, sleepRecords);
-
     } catch (error) {
-      console.error('Error reading health data:', error);
-      Alert.alert('Error', 'Failed to read health data.');
+      handleError('reading health data', 'Failed to read health data.', error);
     }
   };
 
-  const sendDataToBackend = async (heartRate: HealthConnectRecord[], sleep: HealthConnectRecord[]) => {
+  const sendDataToBackend = async (_heartRate: HealthConnectRecord[], _sleep: HealthConnectRecord[]) => {
+    // TODO: Replace with a real fetch() call to backend API endpoint.
     console.log('Simulating sending data to backend...');
-    // In a real application, you would send this data to your server.
-    // Example:
-    // try {
-    //   const response = await fetch('YOUR_BACKEND_API_ENDPOINT/health-data', {
-    //     method: 'POST',
-    //     headers: {
-    //       'Content-Type': 'application/json',
-    //     },
-    //     body: JSON.stringify({ heartRate, sleep }),
-    //   });
-    //   if (response.ok) {
-    //     console.log('Data sent to backend successfully!');
-    //   } else {
-    //     console.error('Failed to send data to backend:', response.statusText);
-    //   }
-    // } catch (error) {
-    //   console.error('Network error sending data:', error);
-    // }
     Alert.alert('Backend Simulation', 'Data would be sent to your backend here.');
   };
 
@@ -123,10 +107,10 @@ function App(): React.JSX.Element {
           <Text style={styles.sectionDescription}>
             This app demonstrates integration with Google Health Connect.
           </Text>
-          <Button title="Request Health Permissions" onPress={requestPermissions} />
-          <View style={styles.spacer} />
-          <Button title="Read Health Data" onPress={readHealthData} disabled={!permissionsGranted} />
-          <View style={styles.spacer} />
+          <View style={styles.buttonGroup}>
+            <Button title="Request Health Permissions" onPress={requestPermissions} />
+            <Button title="Read Health Data" onPress={readHealthData} disabled={!permissionsGranted} />
+          </View>
           <Text style={styles.sectionDescription}>
             Permissions Granted: {permissionsGranted ? 'Yes' : 'No'}
           </Text>
@@ -158,10 +142,8 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     color: Colors.dark,
   },
-  highlight: {
-    fontWeight: '700',
-  },
-  spacer: {
+  buttonGroup: {
+    gap: 20,
     marginVertical: 10,
   },
 });
