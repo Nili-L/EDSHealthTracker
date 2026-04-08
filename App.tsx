@@ -43,6 +43,8 @@ function App(): React.JSX.Element {
   const backgroundStyle = {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
   };
+  const textColor = isDarkMode ? Colors.lighter : Colors.darker;
+  const subtextColor = isDarkMode ? Colors.light : Colors.dark;
 
   const [permissionsGranted, setPermissionsGranted] = useState(false);
   const [heartRateData, setHeartRateData] = useState<HealthConnectRecord[]>([]);
@@ -102,22 +104,41 @@ function App(): React.JSX.Element {
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         style={backgroundStyle}>
-        <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>Health Connect Integration</Text>
-          <Text style={styles.sectionDescription}>
+        <View style={styles.sectionContainer} accessibilityRole="summary">
+          <Text style={[styles.sectionTitle, {color: textColor}]} accessibilityRole="header">Health Connect Integration</Text>
+          <Text style={[styles.sectionDescription, {color: subtextColor}]}>
             This app demonstrates integration with Google Health Connect.
           </Text>
           <View style={styles.buttonGroup}>
-            <Button title="Request Health Permissions" onPress={requestPermissions} />
-            <Button title="Read Health Data" onPress={readHealthData} disabled={!permissionsGranted} />
+            <Button
+              title="Request Health Permissions"
+              onPress={requestPermissions}
+              accessibilityLabel="Request health data permissions from Google Health Connect"
+            />
+            <Button
+              title="Read Health Data"
+              onPress={readHealthData}
+              disabled={!permissionsGranted}
+              accessibilityLabel="Fetch heart rate and sleep data from the last 7 days"
+              accessibilityState={{disabled: !permissionsGranted}}
+            />
           </View>
-          <Text style={styles.sectionDescription}>
+          <Text
+            style={[styles.sectionDescription, {color: subtextColor}]}
+            accessibilityLabel={`Permissions ${permissionsGranted ? 'granted' : 'not granted'}`}
+            accessibilityLiveRegion="polite">
             Permissions Granted: {permissionsGranted ? 'Yes' : 'No'}
           </Text>
-          <Text style={styles.sectionDescription}>
+          <Text
+            style={[styles.sectionDescription, {color: subtextColor}]}
+            accessibilityLabel={`${heartRateData.length} heart rate records`}
+            accessibilityLiveRegion="polite">
             Heart Rate Records: {heartRateData.length}
           </Text>
-          <Text style={styles.sectionDescription}>
+          <Text
+            style={[styles.sectionDescription, {color: subtextColor}]}
+            accessibilityLabel={`${sleepData.length} sleep records`}
+            accessibilityLiveRegion="polite">
             Sleep Records: {sleepData.length}
           </Text>
         </View>
